@@ -1,0 +1,347 @@
+<html>
+<head></head>
+<body>
+<canvas id="canvas" width = "1200" height = "580"></canvas>
+<script src="https://code.jquery.com/jquery-2.1.0.js"></script>
+<script>
+var canvas = document.getElementById("canvas");
+var ctx = canvas.getContext("2d");
+var width= canvas.width;
+var height = canvas.height;
+var size = 30;
+//set up the map
+var map =[[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+		 [1,0,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,0,1,0],
+		 [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1,0],
+		 [1,0,1,0,0,0,1,1,0,0,0,1,1,0,0,0,1,0,1,0],
+		 [1,0,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,0,1,0],
+		 [1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,0],
+		 [1,0,0,0,1,0,1,0,0,-1,0,0,1,0,1,0,0,0,1,0],
+		 [1,0,0,0,1,0,1,0,-1,-1,-1,0,1,0,1,0,0,0,1,0],
+		 [1,1,1,1,1,0,1,0,0,0,0,0,1,0,1,1,1,1,1,0],
+		 [1,0,1,0,0,0,1,1,1,-1,1,1,1,0,0,0,1,0,1,0],
+		 [1,0,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,0,1,0],
+		 [1,0,0,0,0,0,1,1,1,0,1,1,1,0,0,0,0,0,1,0],
+		 [1,0,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,0,1,0],
+		 [1,1,1,0,0,1,0,0,1,0,1,0,0,1,0,0,1,1,1,0],
+		 [1,0,1,0,0,1,1,1,1,0,1,1,1,1,0,0,1,0,1,0],
+		 [1,0,1,0,0,1,0,0,1,1,1,0,0,1,0,0,1,0,1,0],
+		 [1,0,1,1,1,1,0,0,0,1,0,0,0,1,1,1,1,0,1,0],
+		 [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1,0],
+		 [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+		 [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+] 
+//set score to minimum
+var score = 0;//209
+var drawmap = function(){
+	for (var i=0;i<19;i++){
+		for (var j=0;j<19;j++){
+			if (map[j][i]===0){
+				ctx.fillStyle="Blue";
+				ctx.fillRect(i*size,j*size,size,size);
+			} else {
+				ctx.fillStyle="Black";
+				ctx.fillRect(i*size,j*size,size,size);
+				if (map[j][i]===1){
+				ctx.fillStyle="Gold";
+				ctx.beginPath();
+				ctx.arc(i*size+size/2,j*size+size/2,3,0,Math.PI*2);
+				ctx.fill();
+				}
+			}
+		}
+	}
+	ctx.fillStyle="Black";
+	ctx.font="30px Arial";
+	ctx.fillText("Score = "+score,600,30);
+}
+//set a new eater
+var eater= function(){
+	this.x=9;
+	this.y=9;
+	this.direct="right";
+	this.stage=2;
+}
+//draw the eater
+eater.prototype.draw=function(){
+	ctx.fillStyle="Gold";
+	if (this.stage===1){
+		ctx.arc(this.x*size+size/2,this.y*size+size/2,size/2,0,Math.PI*2);
+		ctx.fill();
+		this.stage=2;
+	} else {
+		ctx.beginPath();
+		ctx.moveTo(this.x*size+size/2,this.y*size+size/2);
+		if (this.direct==="left"){
+			ctx.arc(this.x*size+size/2,this.y*size+size/2,size/2,Math.PI/6*7,Math.PI/6*5);
+		} else if (this.direct==="right"){
+			ctx.arc(this.x*size+size/2,this.y*size+size/2,size/2,Math.PI/6,Math.PI/6*11);
+		} else if (this.direct==="up"){
+			ctx.arc(this.x*size+size/2,this.y*size+size/2,size/2,Math.PI/6*10,Math.PI/6*8);
+		} else if (this.direct==="down"){
+			ctx.arc(this.x*size+size/2,this.y*size+size/2,size/2,Math.PI/6*4,Math.PI/6*2);
+		}
+		ctx.lineTo(this.x*size+size/2,this.y*size+size/2);
+		ctx.fill();
+		this.stage=1;
+	}
+}
+var ghost = function(dx,dy,di){
+	this.x=dx;
+	this.y=dy;
+	if (di===1){this.direct="left";this.colour="Red";}
+	if (di===2){this.direct="up";this.colour="Purple";}
+	if (di===3){this.direct="right";this.colour="Lightblue";}
+	if (di===4){this.direct="down";this.colour="Green";}
+};
+//draw the new ghost
+ghost.prototype.draw=function(){
+	//body
+	ctx.fillStyle=this.colour;
+	ctx.beginPath();
+	ctx.moveTo(this.x*size+size/12*11,this.y*size+size/12*5);
+	ctx.lineTo(this.x*size+size/12,this.y*size+size/12*5);
+	ctx.arc(this.x*size+size/2,this.y*size+size/12*5,size/12*5,Math.PI,Math.PI*2);
+	ctx.moveTo(this.x*size+size/12*11,this.y*size+size/12*5);
+	ctx.lineTo(this.x*size+size/12*11,this.y*size+size);
+	ctx.lineTo(this.x*size+size/12*10,this.y*size+size);
+	ctx.lineTo(this.x*size+size/3*2,this.y*size+size/6*5);
+	ctx.lineTo(this.x*size+size/2,this.y*size+size);
+	ctx.lineTo(this.x*size+size/3,this.y*size+size/6*5);
+	ctx.lineTo(this.x*size+size/6,this.y*size+size);
+	ctx.lineTo(this.x*size+size/12,this.y*size+size);
+	ctx.lineTo(this.x*size+size/12,this.y*size+size/12*5);
+	ctx.fill();
+	//eyes
+	ctx.fillStyle="White";
+	ctx.beginPath();
+	ctx.arc(this.x*size+size/10*3,this.y*size+size/20*11,size/15*2,0,Math.PI*2);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.arc(this.x*size+size/10*7,this.y*size+size/20*11,size/15*2,0,Math.PI*2);
+	ctx.fill();
+	//眼珠
+	ctx.fillStyle="Black";
+	if (this.direct==="left"){deltax=size/30*7;deltay=size/20*11;}
+	if (this.direct==="right"){deltax=size/30*11;deltay=size/20*11;}
+	if (this.direct==="up"){deltax=size/10*3;deltay=size/60*29;}
+	if (this.direct==="down"){deltax=size/10*3;deltay=size/60*37;}
+	ctx.beginPath();
+	ctx.arc(this.x*size+deltax,this.y*size+deltay,size/15,0,Math.PI*2);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.arc(this.x*size+deltax+size/5*2,this.y*size+deltay,size/15,0,Math.PI*2);
+	ctx.fill();
+	ctx.closePath();
+}
+//move the eater
+eater.prototype.move= function(key){
+	if (key === 37){
+		this.direct = "left";
+		this.x=this.x-1;
+		if (map[this.y][this.x]===0 || this.x<0){
+			this.x=this.x+1;
+		} else if (map[this.y][this.x]===1){
+			map[this.y][this.x]=-1;
+			score+=1;
+		}
+	}
+	if (key === 38 ){
+		this.direct = "up";
+		if (this.y>0){
+		this.y=this.y-1;
+		if (map[this.y][this.x]===0 || this.y<0){
+			this.y=this.y+1;
+		} else if (map[this.y][this.x]===1){
+			map[this.y][this.x]=-1;
+			score+=1;
+		}}
+	}
+	if (key === 39){
+		this.direct = "right";
+		this.x=this.x+1;
+		if (map[this.y][this.x]===0 || this.x>18){
+			this.x=this.x-1;
+		} else if (map[this.y][this.x]===1){
+			map[this.y][this.x]=-1;
+			score+=1;
+		}	
+	}
+	if (key === 40){
+		this.direct = "down";
+		this.y=this.y+1;
+		if (map[this.y][this.x]===0 || this.y>=19){
+			this.y=this.y-1;
+		} else if (map[this.y][this.x]===1){
+			map[this.y][this.x]=-1;
+			score+=1;
+		}
+	}
+}
+ghost.prototype.move= function(){
+	if (this.direct ==="left"){
+		this.x=this.x-1;
+	}
+	if (this.direct ==="up"){
+		this.y=this.y-1;
+	}	
+	if (this.direct ==="right"){
+		this.x=this.x+1;
+	}	
+	if (this.direct ==="down"){
+		this.y=this.y+1;
+	}
+	var k = this.finda();
+	if (k ===false){
+
+		var ran=[0,0,0,0];
+		var i=0;
+		while (i<4){
+			ran[i]=Math.floor(Math.random()*4)+1;
+			var m=true;
+			for (var j=0;j<i;j++){
+				if (ran [j]===ran[i]){
+					m=false;
+				}
+			}
+			if (m===true){i=i+1;}
+		}
+		for (var i=0;i<4;i++){
+			if (ran[i]===1){
+				if (this.x<=17){
+					if ((map[this.y][this.x+1] ===1 || map[this.y][this.x+1] ===-1) && this.direct !="left"){
+						this.direct="right"; return;
+				}}
+			}
+			if (ran[i]===2){
+				if (this.x>=1){
+					if ((map[this.y][this.x-1] ===1 || map[this.y][this.x-1] ===-1) && this.direct !="right"){
+						this.direct="left"; return;
+				}}
+			}
+			if (ran[i]===3){
+				if (this.y>=1){
+					if ((map[this.y-1][this.x] ===1 || map[this.y-1][this.x] ===-1)  && this.direct !="down"){
+						this.direct="up"; return;
+				}}
+			}
+			if (ran[i]===4){
+				if (this.y<=17){
+					if ((map[this.y+1][this.x] ===1 ||map[this.y+1][this.x] ===-1) && this.direct !="up"){
+						this.direct="down"; return;
+				}}
+			}
+		}
+	}
+}
+ghost.prototype.finda = function(){
+	if (this.y === ha.y){
+		//alert("hay");
+		if (this.x<ha.x) {var n=this.x+1; var m = ha.x} else {var m=this.x; var n = ha.x+1}
+		var j=1;
+		for (var i=n;i<m;i++){
+			j=j*map[this.y][i];
+		}
+		if (j!=0) {
+			if (this.x<ha.x) {this.direct = "right"} else {this.direct = "left"}
+			return true;
+		}
+	}
+	if (this.x=== ha.x){
+		//alert("hax");
+		if (this.y<ha.y) {var n=this.y+1; var m = ha.y} else {var m=this.y; var n = ha.y+1}
+		var j=1;
+		for (var i=n;i<m;i++){
+			j=j*map[i][this.x];
+		}
+		if (j!=0) {
+			if (this.y<ha.y) {this.direct = "down"} else {this.direct = "up"}
+			return true;
+		}
+	}
+	return false;
+}
+var don = function(){
+	if (ha.x===ghost1.x && ha.y===ghost1.y){
+		return true;
+	}
+	if (ha.x===ghost2.x && ha.y===ghost2.y){
+		return true;
+	}
+	if (ha.x===ghost3.x && ha.y===ghost3.y){
+		return true;
+	}
+	if (ha.x===ghost4.x && ha.y===ghost4.y){
+		return true;
+	}
+	return false;
+}
+drawmap();
+//set 4 ghosts
+//set 1 eater
+var ghost1 = new ghost(9,6,2);
+var ghost2 = new ghost(9,7,3);
+var ghost3 = new ghost(8,7,4);
+var ghost4 = new ghost(10,7,1);
+ghost1.direct="up";
+ghost2.direct="up";
+ghost3.direct="no";
+ghost4.direct="left";
+var ha = new eater();
+ha.draw();
+ghost1.draw();
+ghost2.draw();
+ghost3.draw();
+ghost4.draw();
+
+$("body").keydown(function(event){
+		key=event.keyCode;
+		ha.move(key);
+})
+var zhaoyi = 0;
+var ID=setInterval(function(){
+	ctx.clearRect(0,0,1200,580);
+	//move the ghost
+	zhaoyi +=1;
+	drawmap();
+	ghost1.move();
+	ghost2.move();
+	ghost3.move();
+	ghost4.move();
+	if (zhaoyi ===1) {
+		ghost3.direct="right";
+		ghost4.direct="up";
+	}
+	if (zhaoyi === 2){
+		ghost3.direct="up";
+		map[7][8]=-2;
+		map[7][10]=-2;
+	}
+	if (zhaoyi === 3){
+		map[7][9]=-2;
+	}
+	if (zhaoyi === 4){
+		map[6][9]=-2;
+	}
+	if (zhaoyi>5){zhaoyi = 5;}
+	ghost1.draw();
+	ghost2.draw();
+	ghost3.draw();
+	ghost4.draw();
+	ha.draw();
+    if (score === 209){
+    	//ctx.fillStyle="Lightblue";
+    	//ctx.font="50px Arial";
+    	//ctx.fillText=("You win!",600,200);
+    	alert("You win!");
+    	clearInterval(ID);
+    }
+    var ze=don();
+    if (ze===true){
+    	alert("You die!");
+    	clearInterval(ID);
+    }
+},300)
+</script>
+</body>
+</html>
